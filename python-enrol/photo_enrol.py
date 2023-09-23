@@ -42,9 +42,7 @@ def request_log(req, msg):
         sys.exit()
 
 
-def photo_enrol(args, config):
-    print(args, config)
-    username = fw.generate(3, separator="_")
+def create_token(config: Settings, username: str) -> str:
     enrol_token_url = (
         f"https://{config.region}.secure.iproov.me/api/v2/claim/enrol/token"
     )
@@ -57,8 +55,11 @@ def photo_enrol(args, config):
     log.debug(f"getting enrol token, url={enrol_token_url}, body={enrol_token_body}")
     get_token = r.post(url=enrol_token_url, json=enrol_token_body)
     request_log(get_token, "create token")
-    token = get_token.json()["token"]
-    with open(settings.img_path, "rb") as f:
+    return get_token.json()["token"]
+
+
+def send_photo(config: Settings, token: str):
+    with open(config.img_path, "rb") as f:
         image = f.read()
 
     enrol_image_url = (
@@ -78,24 +79,35 @@ def photo_enrol(args, config):
     )
     enrol_image = r.post(url=enrol_image_url, files=enrol_image_body)
     request_log(enrol_image, "enrol image")
-    if args.delete_user:
-        url = f"https://{config.region}.secure.iproov.me/api/v2/{config.sp_key}/access_token"
-        enrol_image_body = {"grant_type": "client_credentials"}
-        client_auth = r.auth.HTTPBasicAuth(settings.oa_username, settings.oa_pw)
-        log.debug("getting oauth access token")
-        acc_token_response = r.post(url=url, data=enrol_image_body, auth=client_auth)
-        request_log(acc_token_response, "generate access token")
-        try:
-            acc_token = acc_token_response.json()["access_token"]
-        except KeyError:
-            log.error("failed to get access token to delete user")
-            sys.exit()
 
-        url4 = f"https://{config.region}.secure.iproov.me/api/v2/users/{username}"
-        header = {"Authorization": f"Bearer {acc_token}"}
-        log.debug("deleting user")
-        user_deleted = r.delete(url=url4, headers=header)
-        request_log(user_deleted, "delete user")
+
+def create_access_token(config: Settings) -> str:
+    url = (
+        f"https://{config.region}.secure.iproov.me/api/v2/{config.sp_key}/access_token"
+    )
+    enrol_image_body = {"grant_type": "client_credentials"}
+    client_auth = r.auth.HTTPBasicAuth(config.oa_username, config.oa_pw)
+    log.debug("getting oauth access token")
+    acc_token_response = r.post(url=url, data=enrol_image_body, auth=client_auth)
+    request_log(acc_token_response, "generate access token")
+    return acc_token_response.json()["access_token"]
+
+
+def delete_user(config: Settings, access_token: str, username: str):
+    url4 = f"https://{config.region}.secure.iproov.me/api/v2/users/{username}"
+    header = {"Authorization": f"Bearer {access_token}"}
+    log.debug("deleting user")
+    user_deleted = r.delete(url=url4, headers=header)
+    request_log(user_deleted, "delete user")
+
+
+def photo_enrol(args, config: Settings):
+    username = fw.generate(3, separator="_")
+    token = create_token(config, username)
+    send_photo(config, token)
+    if args.delete_user:
+        access_token = create_access_token(config)
+        delete_user(config, access_token, username)
 
 
 if __name__ == "__main__":
