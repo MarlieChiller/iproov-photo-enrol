@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "python-enrol"
+version = "0.1.0"
+description = ""
+authors = ["charlie <marliechiller@proton.me>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+rich = "^13.5.3"
+requests = "^2.31.0"
+docopt = "^0.6.2"
+pydantic = "^2.3.0"
+pydantic-settings = "^2.0.3"
+friendlywords = "1.1.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
