@@ -7,5 +7,5 @@
 ### To run executable
 `cd target/release`
 
-`./rust-enrol`
+`./rust-enrol` or `./rust-enrol -d` to delete
 
