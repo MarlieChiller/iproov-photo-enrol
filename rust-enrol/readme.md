@@ -6,4 +6,6 @@
 
 ### To run executable
 `cd target/release`
+
 `./rust-enrol`
+
